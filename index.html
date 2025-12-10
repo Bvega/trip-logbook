@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description"
+        content="Track your travels, capture memories, and share your adventures with Trip Logbook.">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Trip Logbook">
+    <title>Trip Logbook - Your Travel Companion</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-512.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-icon">🌍</div>
+            <h1 class="splash-title">Trip Logbook</h1>
+            <p class="splash-subtitle">Your Travel Companion</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <div id="app" class="app-container hidden">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <span class="header-icon">🌍</span>
+                    <h1 class="header-title">Trip Logbook</h1>
+                </div>
+                <div class="header-right">
+                    <button id="search-toggle" class="icon-btn" aria-label="Search">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                    <button id="settings-toggle" class="icon-btn" aria-label="Settings">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="search-bar" class="search-bar hidden">
+                <input type="text" id="search-input" placeholder="Search trips, places, notes..." autocomplete="off">
+                <button id="search-close" class="search-close">✕</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section id="view-dashboard" class="view active">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-icon">🌎</div>
+                        <div class="stat-info"><span class="stat-value" id="stat-countries">0</span><span
+                                class="stat-label">Countries</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏙️</div>
+                        <div class="stat-info"><span class="stat-value" id="stat-cities">0</span><span
+                                class="stat-label">Cities</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📍</div>
+                        <div class="stat-info"><span class="stat-value" id="stat-places">0</span><span
+                                class="stat-label">Places</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📸</div>
+                        <div class="stat-info"><span class="stat-value" id="stat-photos">0</span><span
+                                class="stat-label">Photos</span></div>
+                    </div>
+                </div>
+                <div class="section-header">
+                    <h2>Recent Trips</h2><button class="see-all-btn" data-view="trips">See All</button>
+                </div>
+                <div id="recent-trips" class="trips-carousel">
+                    <div class="empty-state" id="empty-trips">
+                        <div class="empty-icon">✈️</div>
+                        <h3>No trips yet</h3>
+                        <p>Start your adventure!</p><button class="btn-primary" id="add-first-trip">Add Trip</button>
+                    </div>
+                </div>
+                <div class="section-header">
+                    <h2>Your World Map</h2><button class="see-all-btn" data-view="map">Explore</button>
+                </div>
+                <div class="map-preview-container">
+                    <div id="map-preview" class="map-preview"></div>
+                </div>
+            </section>
+
+            <section id="view-trips" class="view">
+                <div class="view-header">
+                    <h2>My Trips</h2>
+                    <div class="filter-tabs"><button class="filter-tab active" data-filter="all">All</button><button
+                            class="filter-tab" data-filter="recent">Recent</button><button class="filter-tab"
+                            data-filter="favorites">Favorites</button></div>
+                </div>
+                <div id="trips-list" class="trips-grid"></div>
+            </section>
+
+            <section id="view-map" class="view">
+                <div id="full-map" class="full-map"></div>
+                <div class="map-controls">
+                    <button id="map-locate" class="map-control-btn" aria-label="My Location">📍</button>
+                    <button id="map-layers" class="map-control-btn" aria-label="Layers">🗺️</button>
+                </div>
+            </section>
+
+            <section id="view-timeline" class="view">
+                <div class="view-header">
+                    <h2>Timeline</h2><select id="timeline-year">
+                        <option value="all">All Years</option>
+                    </select>
+                </div>
+                <div id="timeline-container" class="timeline-container"></div>
+            </section>
+
+            <section id="view-profile" class="view">
+                <div class="profile-header">
+                    <div class="profile-avatar"><span>🧳</span></div>
+                    <h2>Travel Statistics</h2>
+                </div>
+                <div class="stats-detailed">
+                    <div class="stat-detail-card">
+                        <h3>Countries Visited</h3>
+                        <div id="countries-list" class="stat-list"></div>
+                    </div>
+                    <div class="stat-detail-card">
+                        <h3>Most Used Tags</h3>
+                        <div id="tags-cloud" class="tags-cloud"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-view="dashboard"><span
+                    class="nav-icon">🏠</span><span>Home</span></button>
+            <button class="nav-item" data-view="trips"><span class="nav-icon">📅</span><span>Trips</span></button>
+            <button class="nav-item add-btn" id="add-trip-btn">
+                <div class="add-icon">+</div>
+            </button>
+            <button class="nav-item" data-view="map"><span class="nav-icon">🗺️</span><span>Map</span></button>
+            <button class="nav-item" data-view="timeline"><span class="nav-icon">⏱️</span><span>Timeline</span></button>
+        </nav>
+    </div>
+
+    <div id="trip-modal" class="modal"></div>
+    <div id="trip-detail-modal" class="modal"></div>
+    <div id="share-modal" class="modal"></div>
+    <div id="settings-modal" class="modal"></div>
+    <div id="toast" class="toast"><span id="toast-message"></span></div>
+    <div id="image-viewer" class="image-viewer"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }</script>
+</body>
+
+</html>

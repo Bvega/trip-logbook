@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Generate Icons</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+
+        canvas {
+            display: block;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+
+        .downloads {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        a {
+            color: #a29bfe;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Trip Logbook Icon Generator</h1>
+    <p>Click on each icon size to download:</p>
+    <div class="downloads" id="downloads"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('downloads');
+
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Draw rounded rectangle with gradient
+            const radius = size * 0.2;
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#6c5ce7');
+            gradient.addColorStop(1, '#a29bfe');
+
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw globe emoji
+            ctx.font = `${size * 0.5}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🌍', size / 2, size / 2);
+
+            // Create download link
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `icon-${size}.png`;
+            link.textContent = `${size}x${size}`;
+            link.style.padding = '10px 15px';
+            link.style.background = '#333';
+            link.style.borderRadius = '8px';
+            link.style.textDecoration = 'none';
+            container.appendChild(link);
+        });
+    </script>
+</body>
+
+</html>
