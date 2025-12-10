@@ -1,15 +1,45 @@
 /**
  * Trip Logbook - IndexedDB Database Handler
- * Handles all local storage operations using IndexedDB
+ * 
+ * @description Handles all local storage operations using IndexedDB.
+ *              Provides a clean async/await API for CRUD operations on trips and photos.
+ * @version 1.0.0
+ * 
+ * Database Structure:
+ * - trips: Stores trip data (title, country, city, dates, notes, tags, coordinates)
+ * - photos: Stores photo data as Base64 strings, linked to trips via tripId
+ * 
+ * Features:
+ * - Full CRUD operations for trips and photos
+ * - Search functionality across trip fields
+ * - Statistics generation (countries, cities, places, photos count)
+ * - Data export/import for backup and restore
+ * - Automatic database versioning and upgrades
  */
 
-const DB_NAME = 'TripLogbookDB';
-const DB_VERSION = 1;
+// =============================================================================
+// DATABASE CONFIGURATION
+// =============================================================================
 
+const DB_NAME = 'TripLogbookDB';   // IndexedDB database name
+const DB_VERSION = 1;               // Database version (increment for schema changes)
+
+// =============================================================================
+// TRIP DATABASE CLASS
+// =============================================================================
+
+/**
+ * TripDatabase - IndexedDB wrapper class
+ * Provides async methods for all database operations
+ */
 class TripDatabase {
+    /**
+     * Initialize the database connection
+     * @constructor
+     */
     constructor() {
         this.db = null;
-        this.dbReady = this.initDB();
+        this.dbReady = this.initDB();  // Promise that resolves when DB is ready
     }
 
     initDB() {
@@ -32,9 +62,9 @@ class TripDatabase {
 
                 // Trips store
                 if (!db.objectStoreNames.contains('trips')) {
-                    const tripStore = db.createObjectStore('trips', { 
-                        keyPath: 'id', 
-                        autoIncrement: true 
+                    const tripStore = db.createObjectStore('trips', {
+                        keyPath: 'id',
+                        autoIncrement: true
                     });
                     tripStore.createIndex('country', 'country', { unique: false });
                     tripStore.createIndex('city', 'city', { unique: false });
@@ -45,9 +75,9 @@ class TripDatabase {
 
                 // Photos store (separate for better performance)
                 if (!db.objectStoreNames.contains('photos')) {
-                    const photoStore = db.createObjectStore('photos', { 
-                        keyPath: 'id', 
-                        autoIncrement: true 
+                    const photoStore = db.createObjectStore('photos', {
+                        keyPath: 'id',
+                        autoIncrement: true
                     });
                     photoStore.createIndex('tripId', 'tripId', { unique: false });
                 }
@@ -68,15 +98,15 @@ class TripDatabase {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['trips'], 'readwrite');
             const store = transaction.objectStore('trips');
-            
+
             const trip = {
                 ...tripData,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-            
+
             const request = store.add(trip);
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -87,15 +117,15 @@ class TripDatabase {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['trips'], 'readwrite');
             const store = transaction.objectStore('trips');
-            
+
             const trip = {
                 ...tripData,
                 id: parseInt(id),
                 updatedAt: new Date().toISOString()
             };
-            
+
             const request = store.put(trip);
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -103,15 +133,15 @@ class TripDatabase {
 
     async deleteTrip(id) {
         const db = await this.ensureDB();
-        
+
         // First delete associated photos
         await this.deletePhotosByTripId(id);
-        
+
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['trips'], 'readwrite');
             const store = transaction.objectStore('trips');
             const request = store.delete(parseInt(id));
-            
+
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
@@ -123,7 +153,7 @@ class TripDatabase {
             const transaction = db.transaction(['trips'], 'readonly');
             const store = transaction.objectStore('trips');
             const request = store.get(parseInt(id));
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -135,9 +165,9 @@ class TripDatabase {
             const transaction = db.transaction(['trips'], 'readonly');
             const store = transaction.objectStore('trips');
             const request = store.getAll();
-            
+
             request.onsuccess = () => {
-                const trips = request.result.sort((a, b) => 
+                const trips = request.result.sort((a, b) =>
                     new Date(b.startDate) - new Date(a.startDate)
                 );
                 resolve(trips);
@@ -158,7 +188,7 @@ class TripDatabase {
             const store = transaction.objectStore('trips');
             const index = store.index('favorite');
             const request = index.getAll(true);
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -167,8 +197,8 @@ class TripDatabase {
     async searchTrips(query) {
         const trips = await this.getAllTrips();
         const lowerQuery = query.toLowerCase();
-        
-        return trips.filter(trip => 
+
+        return trips.filter(trip =>
             trip.title?.toLowerCase().includes(lowerQuery) ||
             trip.country?.toLowerCase().includes(lowerQuery) ||
             trip.city?.toLowerCase().includes(lowerQuery) ||
@@ -185,7 +215,7 @@ class TripDatabase {
             const transaction = db.transaction(['photos'], 'readwrite');
             const store = transaction.objectStore('photos');
             const request = store.add(photoData);
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -198,7 +228,7 @@ class TripDatabase {
             const store = transaction.objectStore('photos');
             const index = store.index('tripId');
             const request = index.getAll(parseInt(tripId));
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -210,7 +240,7 @@ class TripDatabase {
             const transaction = db.transaction(['photos'], 'readwrite');
             const store = transaction.objectStore('photos');
             const request = store.delete(parseInt(id));
-            
+
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error);
         });
@@ -229,7 +259,7 @@ class TripDatabase {
             const transaction = db.transaction(['photos'], 'readonly');
             const store = transaction.objectStore('photos');
             const request = store.getAll();
-            
+
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -239,11 +269,11 @@ class TripDatabase {
     async getStats() {
         const trips = await this.getAllTrips();
         const photos = await this.getAllPhotos();
-        
+
         const countries = new Set(trips.map(t => t.country).filter(Boolean));
         const cities = new Set(trips.map(t => t.city).filter(Boolean));
         const places = trips.filter(t => t.place).length;
-        
+
         return {
             countries: countries.size,
             cities: cities.size,
@@ -256,7 +286,7 @@ class TripDatabase {
     async getCountriesList() {
         const trips = await this.getAllTrips();
         const countryMap = {};
-        
+
         trips.forEach(trip => {
             if (trip.country) {
                 if (!countryMap[trip.country]) {
@@ -265,7 +295,7 @@ class TripDatabase {
                 countryMap[trip.country]++;
             }
         });
-        
+
         return Object.entries(countryMap)
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count);
@@ -274,7 +304,7 @@ class TripDatabase {
     async getTagsList() {
         const trips = await this.getAllTrips();
         const tagMap = {};
-        
+
         trips.forEach(trip => {
             if (trip.tags && Array.isArray(trip.tags)) {
                 trip.tags.forEach(tag => {
@@ -285,7 +315,7 @@ class TripDatabase {
                 });
             }
         });
-        
+
         return Object.entries(tagMap)
             .map(([name, count]) => ({ name, count }))
             .sort((a, b) => b.count - a.count);
@@ -295,7 +325,7 @@ class TripDatabase {
     async exportData() {
         const trips = await this.getAllTrips();
         const photos = await this.getAllPhotos();
-        
+
         return {
             version: DB_VERSION,
             exportDate: new Date().toISOString(),
@@ -308,18 +338,18 @@ class TripDatabase {
         if (!data.trips) {
             throw new Error('Invalid data format');
         }
-        
+
         const db = await this.ensureDB();
-        
+
         // Clear existing data
         await this.clearAllData();
-        
+
         // Import trips
         for (const trip of data.trips) {
             const { id, ...tripData } = trip;
             await this.addTrip(tripData);
         }
-        
+
         // Import photos if available
         if (data.photos) {
             for (const photo of data.photos) {
@@ -327,19 +357,19 @@ class TripDatabase {
                 await this.addPhoto(photoData);
             }
         }
-        
+
         return true;
     }
 
     async clearAllData() {
         const db = await this.ensureDB();
-        
+
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['trips', 'photos'], 'readwrite');
-            
+
             transaction.objectStore('trips').clear();
             transaction.objectStore('photos').clear();
-            
+
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         });

@@ -1,5 +1,31 @@
-/* Trip Logbook - Main Styles */
-/* Modern, responsive design with dark theme */
+/**
+ * Trip Logbook - Main Stylesheet
+ * 
+ * @description Complete styling for the Trip Logbook PWA
+ * @version 1.1.0
+ * 
+ * Structure:
+ * 1. CSS Variables (Dark & Light themes)
+ * 2. Reset & Base styles
+ * 3. Splash Screen
+ * 4. App Layout (Header, Main, Bottom Nav)
+ * 5. Components (Cards, Buttons, Forms)
+ * 6. Views (Dashboard, Trips, Map, Timeline, Profile)
+ * 7. Modals (Trip form, Detail, Share, Settings)
+ * 8. Utilities (Animations, Responsive)
+ * 
+ * Design System:
+ * - Primary: Purple gradient (#6c5ce7 to #a29bfe)
+ * - Dark Mode: Deep purple-black backgrounds
+ * - Light Mode: Clean whites and soft grays
+ * - Typography: Outfit font family
+ * - Border Radius: Rounded modern design
+ * - Glassmorphism: Frosted glass effects
+ */
+
+/* =============================================================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ============================================================================= */
 
 :root {
     /* Color Palette - Dark Theme */

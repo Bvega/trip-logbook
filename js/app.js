@@ -1,18 +1,43 @@
 /**
  * Trip Logbook - Main Application
+ * 
+ * @description Progressive Web App for tracking travel experiences
+ * @author Trip Logbook Team
+ * @version 1.1.0
+ * 
+ * Features:
+ * - Trip CRUD operations (Create, Read, Update, Delete)
+ * - Photo upload and storage (Base64 in IndexedDB)
+ * - Interactive maps with Leaflet.js
+ * - Timeline view for chronological display
+ * - Search and filter functionality
+ * - Social media sharing (Facebook, Instagram)
+ * - Dark/Light theme support
+ * - Full offline capability via Service Worker
+ * 
+ * Dependencies:
+ * - Leaflet.js (for maps)
+ * - IndexedDB (for local storage via db.js)
  */
 
-// App State
+// =============================================================================
+// APPLICATION STATE
+// =============================================================================
+
+/**
+ * Global application state object
+ * @type {Object}
+ */
 const state = {
-    currentView: 'dashboard',
-    currentTrip: null,
-    currentFilter: 'all',
-    searchQuery: '',
-    mapPreview: null,
-    fullMap: null,
-    pendingPhotos: [],
-    viewerImages: [],
-    viewerIndex: 0
+    currentView: 'dashboard',    // Active view: dashboard, trips, map, timeline, profile
+    currentTrip: null,           // Currently selected trip for viewing/editing
+    currentFilter: 'all',        // Trip filter: all, recent, favorites
+    searchQuery: '',             // Current search query
+    mapPreview: null,            // Leaflet map instance for dashboard preview
+    fullMap: null,               // Leaflet map instance for full map view
+    pendingPhotos: [],           // Photos pending upload during trip creation
+    viewerImages: [],            // Images for the full-screen viewer
+    viewerIndex: 0               // Current index in image viewer
 };
 
 // DOM Elements
