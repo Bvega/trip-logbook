@@ -272,6 +272,20 @@ function handleFilter(tab) {
 }
 
 // Map Functions
+// Tile layer URLs - using Voyager (colorful) as default, with dark option
+const MAP_TILES = {
+    light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+};
+
+let mapPreviewTileLayer = null;
+let fullMapTileLayer = null;
+
+function getMapTileUrl() {
+    const isDarkMode = !document.body.classList.contains('light-theme');
+    return isDarkMode ? MAP_TILES.dark : MAP_TILES.light;
+}
+
 function initMaps() {
     // Map Preview (Dashboard)
     if (document.getElementById('map-preview')) {
@@ -281,7 +295,7 @@ function initMaps() {
             dragging: false
         }).setView([20, 0], 1);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        mapPreviewTileLayer = L.tileLayer(MAP_TILES.light, {
             maxZoom: 19
         }).addTo(state.mapPreview);
     }
@@ -293,7 +307,7 @@ function loadFullMap() {
             zoomControl: false
         }).setView([20, 0], 2);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        fullMapTileLayer = L.tileLayer(MAP_TILES.light, {
             maxZoom: 19
         }).addTo(state.fullMap);
 
@@ -302,6 +316,18 @@ function loadFullMap() {
     }
 
     updateFullMapMarkers();
+}
+
+// Function to update map tiles when theme changes
+function updateMapTiles() {
+    const tileUrl = getMapTileUrl();
+
+    if (mapPreviewTileLayer) {
+        mapPreviewTileLayer.setUrl(tileUrl);
+    }
+    if (fullMapTileLayer) {
+        fullMapTileLayer.setUrl(tileUrl);
+    }
 }
 
 async function updateMapPreview() {
@@ -983,6 +1009,8 @@ function setupSettings() {
     modal.querySelector('#dark-mode-toggle')?.addEventListener('change', (e) => {
         document.body.classList.toggle('light-theme', !e.target.checked);
         localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+        // Update map tiles to match theme
+        updateMapTiles();
     });
 
     modal.querySelector('#export-data')?.addEventListener('click', async () => {
@@ -1034,6 +1062,15 @@ function toggleSearch() {
     } else {
         elements.searchInput.value = '';
         state.searchQuery = '';
+        // Reset map markers if on map view
+        if (state.currentView === 'map') {
+            updateFullMapMarkers();
+            // Remove search marker
+            if (searchMarker && state.fullMap) {
+                state.fullMap.removeLayer(searchMarker);
+                searchMarker = null;
+            }
+        }
     }
 }
 
@@ -1045,7 +1082,100 @@ async function handleSearch() {
     } else if (state.currentView === 'dashboard') {
         const trips = await tripDB.searchTrips(state.searchQuery);
         renderRecentTrips(trips.slice(0, 5));
+    } else if (state.currentView === 'map') {
+        await handleMapSearch(state.searchQuery);
     }
+}
+
+// Map Search - filters markers and/or pans to searched location
+async function handleMapSearch(query) {
+    if (!query || !state.fullMap) return;
+
+    // First, try to find matching trips
+    const matchingTrips = await tripDB.searchTrips(query);
+
+    if (matchingTrips.length > 0) {
+        // Found matching trips - show only their markers
+        await updateMapWithFilteredTrips(matchingTrips);
+
+        // Fit map to show all matching markers
+        const bounds = matchingTrips
+            .filter(t => t.lat && t.lng)
+            .map(t => [t.lat, t.lng]);
+
+        if (bounds.length > 0) {
+            state.fullMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+            showToast(`Found ${matchingTrips.length} trip(s) matching "${query}"`);
+        } else {
+            showToast(`Found ${matchingTrips.length} trip(s) but no map locations`);
+        }
+    } else {
+        // No matching trips - try to geocode the location
+        showToast('Searching location...');
+        const coords = await geocodeLocation(query);
+
+        if (coords) {
+            // Pan map to the searched location
+            state.fullMap.setView([coords.lat, coords.lng], 12);
+
+            // Add a temporary marker for the searched location
+            addSearchMarker(coords, query);
+            showToast(`Found: ${query}`);
+        } else {
+            showToast('Location not found');
+        }
+    }
+}
+
+// Update map with filtered trips only
+async function updateMapWithFilteredTrips(trips) {
+    if (!state.fullMap) return;
+
+    // Clear existing markers
+    state.fullMap.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+            state.fullMap.removeLayer(layer);
+        }
+    });
+
+    // Add markers for filtered trips
+    trips.forEach(trip => {
+        if (trip.lat && trip.lng) {
+            const marker = L.marker([trip.lat, trip.lng], {
+                icon: createCustomIcon()
+            }).addTo(state.fullMap);
+
+            marker.bindPopup(`
+                <strong>${escapeHtml(trip.title)}</strong><br>
+                📍 ${escapeHtml(trip.city)}, ${escapeHtml(trip.country)}
+            `);
+
+            marker.on('click', () => openTripDetail(trip.id));
+        }
+    });
+}
+
+// Add a temporary search marker (different style)
+let searchMarker = null;
+function addSearchMarker(coords, label) {
+    // Remove previous search marker if exists
+    if (searchMarker && state.fullMap) {
+        state.fullMap.removeLayer(searchMarker);
+    }
+
+    // Create a different icon for search results
+    const searchIcon = L.divIcon({
+        html: '<div class="custom-marker" style="background: linear-gradient(135deg, #00cec9, #81ecec);">🔍</div>',
+        className: '',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+    });
+
+    searchMarker = L.marker([coords.lat, coords.lng], {
+        icon: searchIcon
+    }).addTo(state.fullMap);
+
+    searchMarker.bindPopup(`<strong>📍 ${escapeHtml(label)}</strong><br><em>Search result</em>`).openPopup();
 }
 
 // Utility Functions
